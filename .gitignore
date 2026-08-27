@@ -1,0 +1,26 @@
+# Environment / secrets
+.venv/
+venv/
+*.egg-info/
+__pycache__/
+*.pyc
+
+# Competition data (Kaggle-owned, token-gated; never commit)
+data/
+cache/tables/
+outputs/
+docs/scorecards/*.md
+!docs/scorecards/.gitkeep
+
+# Secrets
+.kaggle/
+.config/
+secrets.env
+.env
+*.env
+
+# Tooling
+.pytest_cache/
+.ruff_cache/
+dist/
+build/
