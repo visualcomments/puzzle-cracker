@@ -1,0 +1,2 @@
+epoch,train_loss,vertices_seen,data_gen_time,train_epoch_time
+1,6.848938616037369,1000000,15.919936180114746,203.25559186935425

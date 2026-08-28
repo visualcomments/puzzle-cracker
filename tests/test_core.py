@@ -132,6 +132,31 @@ def test_poly_all_segment_reversals():
     assert len(sol) <= 2 * 10
 
 
+def test_self_improve_analyze_plan():
+    from puzzle_cracker import scoring
+    from puzzle_cracker import self_improve as SI
+    from puzzle_cracker.config import Config
+    p = scoring.RunReport("t")
+    for i in range(10):
+        p.results.append(scoring.CaseResult(str(i), i < 6, [], 4, 0.1))
+    cfg = Config()
+    a = SI.analyze([p], cfg)
+    assert a["solved"] == 6 and a["total"] == 10
+    cands = SI.plan(a, cfg)
+    assert cands  # low solve rate must produce candidates
+    assert cands[0]["to"] > cands[0]["from"]
+
+
+def test_publish_no_token_graceful():
+    from puzzle_cracker import self_improve as SI
+    import os
+    os.environ.pop("GITHUB_TOKEN", None)
+    os.environ.pop("GH_TOKEN", None)
+    res = SI.publish("test no-token")
+    assert res["published"] is False
+    assert "token" in res.get("reason", "") or "no GITHUB" in res.get("reason", "")
+
+
 if __name__ == "__main__":
     import traceback
 

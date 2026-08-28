@@ -1,0 +1,14 @@
+{
+  "id": "visualcomments/puzzle-cracker-megaminx-validate",
+  "title": "Puzzle Cracker - Megaminx diffusion validation",
+  "code_file": "run_validation.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": false,
+  "dataset_sources": [
+    "visualcomments/puzzle-cracker-megaminx-diff"
+  ],
+  "model_sources": []
+}

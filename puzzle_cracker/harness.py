@@ -63,12 +63,10 @@ def make_solver(puzzle: Puzzle, method: str, table_dir: Optional[str],
     if method == "auto":
         if staged is not None:
             return staged_solve, "staged"
-        try:
-            from .group import group_order
-            if group_order(puzzle) <= 400_000:
-                return bibfs, "bibfs"
-        except Exception:
-            pass
+        # bibfs is only safe for small puzzles; anything big goes to beam
+        # (biBFS dicts of huge facelet tuples blow memory)
+        if puzzle.n <= 30 and len(puzzle.move_names) <= 20:
+            return bibfs, "bibfs"
         return beam, "beam"
     return {"bibfs": bibfs, "ida": ida, "beam": beam, "staged": staged_solve}[method], method
 
@@ -135,6 +133,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--all", action="store_true",
                     help="run every locally-available CayleyPy competition")
     ap.add_argument("--submission", action="store_true")
+    ap.add_argument("--improve", action="store_true",
+                    help="run the self-improvement loop on this run's "
+                         "results (analyze -> change -> regress -> publish)")
     args = ap.parse_args(argv)
 
     if kaggle_client.token() is None:
@@ -210,6 +211,17 @@ def _run_all(args: argparse.Namespace) -> int:
                    args.method)
     print()
     print(scoring.summarize(reports))
+    if args.improve:
+        from . import self_improve
+        out = self_improve.improve_once(reports, data_dir=args.data_dir,
+                                        allow_publish=True)
+        print("[harness] improvement round:")
+        print("  strengths :", ", ".join(out["analysis"]["strengths"]))
+        print("  weaknesses:", ", ".join(out["analysis"]["weaknesses"]))
+        app = out.get("applied") or {}
+        print("  applied   :", app.get("kind"), app.get("from"), "->",
+              app.get("to"), "(kept:", app.get("kept"), ")")
+        print("  publish   :", out.get("published"))
     return 0
 
 

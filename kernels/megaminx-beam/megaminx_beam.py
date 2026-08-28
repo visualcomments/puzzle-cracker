@@ -146,13 +146,16 @@ def beam(puzzle_moves, state, solved, h, width=BEAM_WIDTH,
         beam = candidates[:width]
 
 
-def solve_one(puzzle_moves, state, solved, h, t0):
+def solve_one(puzzle_moves, state, solved, h):
+    """Per-case budget must be measured from the *case* start, not the
+    global kernel start - otherwise late cases get a zero budget."""
     if state == solved:
         return []
+    t1 = time.time()
     res = greedy(puzzle_moves, state, solved, h)
     if res is not None:
         return res
-    return beam(puzzle_moves, state, solved, h, t0=t0)
+    return beam(puzzle_moves, state, solved, h, t0=t1)
 
 
 def shorten(sol, puzzle_moves, solved):
@@ -192,7 +195,7 @@ def main():
     solved_cnt = 0
     total_moves = 0
     for i, (cid, st) in enumerate(cases):
-        sol = solve_one(pm, st, solved_state, h, t0)
+        sol = solve_one(pm, st, solved_state, h)
         if sol is not None:
             sol = shorten(sol, pm, solved_state)
             # verify

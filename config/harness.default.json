@@ -1,0 +1,17 @@
+{
+  "beam_max_nodes": 4000000,
+  "beam_per_case_budget_s": 30.0,
+  "beam_width": 8192,
+  "bibfs_max_nodes": 1500000,
+  "default_method": "auto",
+  "ida_max_nodes": 2000000,
+  "improve_max_step": "beam_width",
+  "target_mean_length": 60.0,
+  "target_solve_rate": 0.8,
+  "tuning": {
+    "beam_width_cap": 32768,
+    "beam_width_step": 1.5,
+    "budget_cap": 90.0,
+    "budget_step": 1.25
+  }
+}

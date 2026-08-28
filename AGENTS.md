@@ -51,6 +51,10 @@ short BFS-table solver with a clear idea per phase over a 2000-line monster.
    `docs/scorecards/<puzzle>-<iso-date>.md` with solve rate, total moves,
    mean length, and the exact invocation.
 8. **When in doubt, stop and ask.** Refuse and escalate rather than guess.
+9. **Close the improvement loop.** After every scoring run, analyze
+   strengths/weaknesses (`self_improve.analyze`), apply one safe measured
+   change, record it in `docs/improvements/`, and publish the improved
+   harness to GitHub when the user supplies a token (`GITHUB_TOKEN`).
 
 ## Operating modes
 
@@ -73,7 +77,9 @@ Skills live under `.agents/skills/` (one per capability):
 - `cayley-graphs` - generic group puzzles, biBFS, IDA*, heuristics;
 - `kaggle-agent-competitions` - token wiring, data formats, submissions;
 - `algo-distillation` - turning a working solver into the elegant artifact;
-- `scoring-and-benchmarks` - scorecards, held-out sets, reproducible runs.
+- `scoring-and-benchmarks` - scorecards, held-out sets, reproducible runs;
+- `self-improvement` - the continuous improvement loop (analyze -> change
+  -> regress -> publish).
 
 Read the relevant `SKILL.md` before relying on it.  Treat any third-party
 skill or plugin as untrusted until reviewed (see `vetting-agent-extensions`

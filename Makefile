@@ -35,6 +35,7 @@ help:
 	@echo "  make demo        end-to-end demo on random 3x3x3 scrambles"
 	@echo "  make verify      correctness oracle (random scrambles solve)"
 	@echo "  make scorecard   append today's scorecard to docs/scorecards/"
+	@echo "  make improve     self-improvement loop (analyze->change->publish)"
 	@echo "  make install     deploy as an agent into a separate project"
 	@echo "  make uninstall   remove what install added"
 	@echo "  make clean       remove build artifacts"
@@ -89,6 +90,11 @@ demo:
 
 verify:
 	@$(PYBIN) scripts/verify.py
+
+improve:
+	@$(PYBIN) -m puzzle_cracker.harness --ref $(REF) --method $(METHOD) \
+	  --data-dir $(DATA_DIR) --out-dir $(OUT_DIR) \
+	  $(if $(LIMIT),--limit $(LIMIT)) --budget $(BUDGET) --improve
 
 scorecard:
 	@mkdir -p docs/scorecards

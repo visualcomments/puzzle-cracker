@@ -39,8 +39,11 @@ def solve(puzzle: Puzzle, state: State, *,
     `solve_staged()` for research runs; the production 333 path here is
     biBFS (short scrambles, optimal) then beam.
     """
-    # bidirectional BFS first (budgeted)
-    if method in (None, "bibfs"):
+    # bidirectional BFS first (budgeted).  Auto mode only uses it where the
+    # state space is small enough that the dicts cannot blow memory; an
+    # explicit method="bibfs" request is honored regardless.
+    auto_bibfs_ok = puzzle.n * len(puzzle.move_names) <= 30 * 24
+    if (method == "bibfs") or (method is None and auto_bibfs_ok):
         res = generic.solve_bibfs_adaptive(puzzle, state, max_states=max_nodes)
         if res is not None:
             return res
