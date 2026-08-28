@@ -19,10 +19,13 @@ load data  ->  solve scrambles  ->  score (solve rate + total moves)
 ```
 
 * **The algorithm**: phase-reduction on the Cayley graph.  The 3x3x3 solver
-  walks the cube down four nested subgroups with four small BFS parent-tree
-  tables (2048 / 1 082 565 / <=20 160 / <=967 680 states) - simple, elegant,
-  deterministic, competitive.  Small puzzles get exact bidirectional BFS;
-  huge ones (Megaminx, 4x4x4+) get colour-guided beam search.
+  walks the cube down four nested subgroups with four BFS parent-tree tables
+  (2048 / 1 082 565 / <=20 160 / <=967 680 states) - simple, elegant,
+  deterministic, competitive.  2x2x2 and small graph puzzles (reversals,
+  globe, LRX...) get **exact bidirectional BFS** (verified optimal);
+  huge ones (Megaminx, 4x4x4+, reversals n>=12) get colour-guided beam
+  search.  Every claim in this repo is backed by a scramble -> solve ->
+  verify run (`make verify`).
 * **Data**: token-gated Kaggle access for the whole CayleyPy family
   (`santa-2023`, `cayley-py-444/555/666/777-cube`, `cayley-py-megaminx`,
   `cayleypy-reversals`, `cayleypy-transposons`, `cayleypy-ihes-cube` and

@@ -451,29 +451,54 @@ class StagedCube:
 
     # -- assembly (cubie coords -> facelet state) --------------------------- #
     def _assemble(self, corners, edges) -> State:
-        """Build the 54-facelet state for a cubie-state (owner, orient)."""
+        """Build the 54-facelet state for a cubie-state (owner, orient).
+
+        Each slot receives the *owner's* home tokens (rotated/flipped by the
+        orientation), never the slot's own - otherwise permuted pieces would
+        assemble as the solved state."""
         tokens = [None] * 54
         for slot, (owner, orient) in enumerate(corners):
             a, b, c = self.corner_slot(CORNER_ORDER[slot])
-            home = tuple(self.solved_state[x] for x in (a, b, c))
-            # rotate home so the U/D token sits at index ``orient``:
-            # tokens[k] = home[(k - orient) mod 3]
+            hx, hy, hz = self.corner_slot(CORNER_ORDER[owner])
+            home = (self.solved_state[hx], self.solved_state[hy],
+                    self.solved_state[hz])
             rot = (home * 2)
-            start = (3 - orient) % 3
+            start = (3 - orient) % 3  # U/D token at index ``orient``
             placed = rot[start: start + 3]
             tokens[a], tokens[b], tokens[c] = placed
         for slot, (owner, orient) in enumerate(edges):
             a, b = self.EDGE_SLOTS[EDGE_ORDER[slot]]
-            h1, h2 = self.solved_state[a], self.solved_state[b]
-            if orient:
-                tokens[a], tokens[b] = h2, h1
+            hx, hy = self.EDGE_SLOTS[EDGE_ORDER[owner]]
+            h1, h2 = self.solved_state[hx], self.solved_state[hy]
+            # place the anchor token so encode() reads the same orient:
+            # orient == 0   -> anchor on an anchor-type face slot
+            # orient == 1   -> anchor on a non-anchor-type slot
+            home_faces = (self.face_of[hx], self.face_of[hy])
+            if any(f in ("U", "D") for f in home_faces):
+                anchor, ok_face = (h1 if self.face_of[hx] in ("U", "D") else h2), ("U", "D")
             else:
-                tokens[a], tokens[b] = h1, h2
+                anchor, ok_face = (h1 if self.face_of[hx] in ("F", "B") else h2), ("F", "B")
+            other = h1 if anchor == h2 else h2
+            fa, fb = self.face_of[a], self.face_of[b]
+            if orient == 0:
+                if fa in ok_face:
+                    tokens[a], tokens[b] = anchor, other
+                elif fb in ok_face:
+                    tokens[a], tokens[b] = other, anchor
+                else:
+                    tokens[a], tokens[b] = anchor, other
+            else:
+                if fa not in ok_face:
+                    tokens[a], tokens[b] = anchor, other
+                else:
+                    tokens[a], tokens[b] = other, anchor
         return tuple(tokens)
 
     # -- solve -------------------------------------------------------------- #
     def solve(self, state: State, table_dir: Optional[str] = None,
               max_phase4: int = 1_500_000, build_tables: bool = True) -> List[str]:
+        budgets = {"p1": 200_000, "p2": 400_000, "p3": 100_000,
+                   "p4": max(400_000, max_phase4)}
         t1 = self._table("p1", 8192)
         t2 = self._table("p2", 2_500_000)
         t3 = self._table("p3", 102_400)
@@ -485,16 +510,15 @@ class StagedCube:
         t4 = _PhaseTable("p4", moves=self._p4_generators(t3), max_states=max_phase4,
                          reduce=self.reduce4, rep=self.rep4)
         if t4.parent is None:
-            if not build_tables:
-                raise RuntimeError("table p4 not built")
             t4.build(self, table_dir and os.path.join(table_dir, "p4.pkl"))
         seq: List[str] = []
         cur = state
         for t in (t1, t2, t3, t4):
             red = t.reduce(cur)
-            path = t.solve_red(red, self)
+            path = t.solve_red(red, self, max_states=budgets[t.name])
             if path is None:
-                raise RuntimeError(f"phase {t.name} could not reach root")
+                raise RuntimeError(f"phase {t.name} could not reach root "
+                                   f"(budget {budgets[t.name]})")
             for m in path:
                 seq.append(m)
                 cur = self.puzzle.apply(cur, m)

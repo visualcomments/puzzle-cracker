@@ -16,14 +16,6 @@ SOLVERS = {
 }
 
 
-def estimate_group_size(puzzle: Puzzle, cap: int = 2_000_000) -> Optional[int]:
-    from ..group import group_order
-    try:
-        return group_order(puzzle)
-    except Exception:
-        return None
-
-
 def make_heuristic(puzzle: Puzzle):
     h = generic.manhattan_15(puzzle)
     if h is not None:
@@ -34,24 +26,25 @@ def make_heuristic(puzzle: Puzzle):
 def solve(puzzle: Puzzle, state: State, *,
           method: Optional[str] = None, time_budget_s: float = 30.0,
           max_nodes: int = 2_000_000, table_dir: Optional[str] = None) -> Optional[List[str]]:
-    """Solve ``state`` -> ``puzzle.solved`` with an automatic method pick."""
-    t0 = time.time()
+    """Solve ``state`` -> ``puzzle.solved`` with an automatic method pick.
 
-    # canonical 3x3x3 -> staged solver
+    Order: staged (3x3x3-class), bidirectional BFS (small groups, budgeted),
+    IDA* (heuristic), beam (huge graphs).  No group-size precomputation: a
+    full-group BFS would blow memory on 2x2x2-sized spaces.
+    """
+    # 3x3x3-class -> staged solver
     if puzzle.n == 54:
         ft = _face_turns_cache(puzzle)
         if ft is not None:
             face_turns, face_of = ft
             sc = StagedCube(puzzle, face_turns, face_of=face_of)
             try:
-                seq = sc.solve(state, table_dir=table_dir)
-                return seq
+                return sc.solve(state, table_dir=table_dir)
             except Exception:
                 pass
 
-    # bidirectional BFS for small groups
-    size = estimate_group_size(puzzle, cap=300_000)
-    if size is not None and size <= 300_000 and method in (None, "bibfs"):
+    # bidirectional BFS first (budgeted)
+    if method in (None, "bibfs"):
         res = generic.solve_bibfs_adaptive(puzzle, state, max_states=max_nodes)
         if res is not None:
             return res
@@ -65,7 +58,7 @@ def solve(puzzle: Puzzle, state: State, *,
 
     # beam search fallback for huge graphs (megaminx, 4x4x4+...)
     if method in (None, "beam"):
-        res = generic.solve_beam(puzzle, state, generic.mismatched_count(puzzle),
+        res = generic.solve_beam(puzzle, state, h,
                                  time_budget_s=time_budget_s, max_nodes=max_nodes * 4)
         return res
     return None
