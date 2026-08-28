@@ -41,6 +41,8 @@ make setup                 # venv + deps + Kaggle credential (KAGGLE_KEY)
 make data                  # download competition data
 make demo                  # solve random 2x2x2 / 3x3x3 / reversals, score
 make run REF=santa-2023 PUZZLE=cube_3/3/3 METHOD=staged
+make data-all              # download every reachable CayleyPy competition
+make run-all               # harness over all 14 competitions (manifest-driven)
 make verify                # correctness oracle
 make install               # scaffold a separate project + register agents
 ```

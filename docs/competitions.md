@@ -46,15 +46,20 @@ permutations on facelets (0-based): `new[i] = old[p[i]]`.
 * `graphs_info.json/.h5`: per-size blocks with `central_state` +
   `generators` (reversals `R[i,j]`, transposons).
 
-## Status of download access
+## Status of download access (verified with the KGAT credential)
 
 The `KGAT_...` credential authenticates the Kaggle API (401 without it).
-At the time of authoring, data for all refs above was downloadable except
-`cayley-py-555/666/777-cube` (listable, 403 on download with this token).
-`cayleypy-reversals` and `cayleypy-transposons` are server competitions:
-they ship graph definitions and a sample submission but no local test.csv,
-so the harness scores local random-walk benchmarks generated from the graph
-definitions.
+`competitions.status(data_dir)` reproduces this table at any time:
+
+| status | refs |
+| --- | --- |
+| data (ready) | santa-2023, cayley-py-444-cube, cayley-py-megaminx, cayleypy-ihes-cube, cayley-py-professor-tetraminx-solve-optimally, cayleypy-reversals, cayleypy-transposons, cayleypy-christophers-jewel |
+| moves-undefined | cayleypy-glushkov, cayleypy-rapapport-m2, lrx-oeis-a-186783 (test data present; generator definitions come from the linked papers) |
+| forbidden | cayley-py-555/666/777-cube (files listable; download 403 with this token - participant access per competition) |
+
+`cayleypy-reversals` / `cayleypy-transposons` are server competitions: they
+ship graph definitions; the harness scores local random-walk benchmarks
+generated from the graph definitions.
 
 ## The scoring contract
 

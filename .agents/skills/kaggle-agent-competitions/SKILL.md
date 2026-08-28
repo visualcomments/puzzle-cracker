@@ -19,20 +19,36 @@ The token is a **secret**: never commit it, print it, or log it.  Prefer
 reading it from the environment at run time in one place
 (`puzzle_cracker/kaggle_client.py`).
 
-## Competition family
+## Competition family (the full manifest)
 
-The CayleyPy puzzle competitions (see `docs/competitions.md`):
+The manifest lives in `puzzle_cracker/competitions.py` - the single source
+of truth.  All 14 refs:
 
-- `santa-2023` - cubes 2x2..33x33, globe, wreath (classic dataset);
-- `cayley-py-444/555/666/777-cube` - NxNxN slice-cube agent competitions;
-- `cayley-py-megaminx` - megaminx, 120 facelets, 24 face turns;
-- `cayleypy-reversals`, `cayleypy-transposons` - graphs_info server comps;
-- `cayleypy-ihes-cube`, `cayley-py-professor-tetraminx-solve-optimally`,
-  `cayleypy-christophers-jewel`, `cayleypy-glushkov`,
-  `cayleypy-rapapport-m2`, `lrx-oeis-a-186783-brainstorm-math-conjecture`.
+| ref | kind | loader |
+| --- | --- | --- |
+| `santa-2023` | santa (csv) | `puzzles.load_santa_2023` |
+| `cayley-py-444/555/666/777-cube` | agent (json) | `load_agent_competition` |
+| `cayley-py-megaminx` | agent | `load_agent_competition` |
+| `cayleypy-ihes-cube` | agent | `load_agent_competition` |
+| `cayley-py-professor-tetraminx-solve-optimally` | agent | `load_agent_competition` |
+| `cayleypy-reversals`, `cayleypy-transposons` | graphs | `load_server_competition` |
+| `cayleypy-christophers-jewel` | agent | `load_agent_competition` |
+| `cayleypy-glushkov`, `cayleypy-rapapport-m2`, `lrx-oeis-...` | raw | raw loader (moves-undefined) |
 
-Some entries can be listed but not downloaded with a given credential
-(403) - treat them as out of scope for runs and note it.
+Components the agent should use:
+
+- `competitions.status(data_dir)` - per-ref: `data` / `moves-undefined` /
+  `forbidden` / `missing` / `no-credentials`;
+- `competitions.fetch_all(data_dir)` - download everything the token can
+  reach (uses `KAGGLE_KEY` / `~/.kaggle/kaggle.json`);
+- `competitions.load_all(data_dir)` - load every local competition into
+  `{puzzle, cases}` bundles;
+- `make data-all` / `make run-all` - the same as one-liners;
+- `python -m puzzle_cracker.harness --all` - harness over all local comps.
+
+Known access state with the KGAT credential: 11/14 datasets downloadable;
+`cayley-py-555/666/777-cube` list their files but download returns 403
+(participant access per competition) - treat as out of scope, note it.
 
 ## Data formats (read before writing a loader)
 

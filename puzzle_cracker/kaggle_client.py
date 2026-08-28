@@ -150,6 +150,21 @@ def load_competition(ref: str, data_dir: str, **kw):
        os.path.exists(os.path.join(d, "graphs_info.h5")):
         size = kw.pop("size", "12")
         return P.load_server_competition(d, size, **kw)
+    test = os.path.join(d, "test.csv")
+    if os.path.exists(test):
+        # raw data with no generator definitions (moves come from the
+        # linked papers: glushkov / rapaport-m2 / lrx-oeis...): load the
+        # cases for reporting; solving is not possible without moves.
+        cases, rows = [], None
+        import csv as _csv
+        with open(test) as f:
+            rows = list(_csv.DictReader(f))
+        for row in rows:
+            st = tuple(row.get("initial_state", "").split(","))
+            cases.append({"id": row.get("initial_state_id", row.get("id")),
+                          "initial_state": st,
+                          "comment": row.get("comment", "")})
+        return {"puzzle": None, "cases": cases, "moves_undefined": True}
     raise FileNotFoundError(f"no data for {ref} in {d} "
                             "(run `make data` or kaggle_client.fetch_competition)")
 

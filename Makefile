@@ -30,6 +30,8 @@ help:
 	@echo "  make setup       create venv, install deps, write Kaggle creds"
 	@echo "  make data        download competition data (uses KAGGLE_KEY)"
 	@echo "  make run         run the harness (REF, METHOD, PUZZLE, LIMIT)"
+	@echo "  make data-all    download every CayleyPy competition reachable"
+	@echo "  make run-all     harness over every locally-available comp"
 	@echo "  make demo        end-to-end demo on random 3x3x3 scrambles"
 	@echo "  make verify      correctness oracle (random scrambles solve)"
 	@echo "  make scorecard   append today's scorecard to docs/scorecards/"
@@ -39,7 +41,18 @@ help:
 
 setup: venv
 	@$(PYBIN) -m puzzle_cracker.kaggle_client 2>/dev/null || true
-	@echo "setup done. If you have a KAGGLE key, run:"
+	@echo "setup done. If you have a KAGGLE key, data-all:
+	@mkdir -p $(DATA_DIR)
+	KAGGLE_KEY=$${KAGGLE_KEY:?set KAGGLE_KEY (KGAT_...) first} \
+	$(PYBIN) -c "from puzzle_cracker import competitions as c; \
+	  ok=c.fetch_all('$(DATA_DIR)'); print('ready:', len(ok))"
+
+run-all:
+	@$(PYBIN) -m puzzle_cracker.harness --all --method $(METHOD) \
+	  --data-dir $(DATA_DIR) --out-dir $(OUT_DIR) \
+	  $(if $(LIMIT),--limit $(LIMIT)) --budget $(BUDGET)
+
+run:"
 	@echo "  export KAGGLE_KEY=KGAT_...  && make data"
 
 venv:
@@ -53,6 +66,17 @@ data:
 	$(PYBIN) -c \
 	"import sys; sys.path.insert(0,'.'); from puzzle_cracker import kaggle_client as k; \
 	 ok = [r for r in k.ensure_data('$(DATA_DIR)')]; print('ready:', ok)"
+
+data-all:
+	@mkdir -p $(DATA_DIR)
+	KAGGLE_KEY=$${KAGGLE_KEY:?set KAGGLE_KEY (KGAT_...) first} \
+	$(PYBIN) -c "from puzzle_cracker import competitions as c; \
+	  ok=c.fetch_all('$(DATA_DIR)'); print('ready:', len(ok))"
+
+run-all:
+	@$(PYBIN) -m puzzle_cracker.harness --all --method $(METHOD) \
+	  --data-dir $(DATA_DIR) --out-dir $(OUT_DIR) \
+	  $(if $(LIMIT),--limit $(LIMIT)) --budget $(BUDGET)
 
 run:
 	@$(PYBIN) -m puzzle_cracker.harness --ref $(REF) --method $(METHOD) \

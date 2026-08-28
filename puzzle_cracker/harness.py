@@ -132,12 +132,17 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--budget", type=float, default=30.0)
     ap.add_argument("--out-dir", default="outputs")
+    ap.add_argument("--all", action="store_true",
+                    help="run every locally-available CayleyPy competition")
     ap.add_argument("--submission", action="store_true")
     args = ap.parse_args(argv)
 
     if kaggle_client.token() is None:
         print("[harness] no KAGGLE key - set KAGGLE_KEY / run `make setup`")
         return 2
+
+    if args.all:
+        return _run_all(args)
 
     bundle = kaggle_client.load_competition(args.ref, args.data_dir)
     if args.ref == "santa-2023":
@@ -164,6 +169,45 @@ def main(argv: Optional[List[str]] = None) -> int:
             scoring.write_submission(
                 rep, os.path.join(args.out_dir, f"submission_{args.ref}.csv"),
                 id_col="initial_state_id", move_col="path")
+    print()
+    print(scoring.summarize(reports))
+    return 0
+
+
+def _run_all(args: argparse.Namespace) -> int:
+    """Run the harness over every locally-available competition."""
+    from . import competitions as C
+    print("[harness] competition manifest status:")
+    for ref, st in C.status(args.data_dir).items():
+        print(f"  {st:16s} {ref}")
+    print()
+    bundled = C.load_all(args.data_dir, verbose=True)
+    reports = []
+    for ref in C.ALL_REFS:
+        bundle = bundled.get(ref)
+        if bundle is None:
+            continue
+        if bundle.get("moves_undefined"):
+            print(f"[harness] {ref}: no generator definitions "
+                  "(moves come from the linked paper) - reporting only")
+            reports.append(scoring.RunReport(ref))
+            continue
+        if ref == "santa-2023":
+            for pt, item in bundle.items():
+                rep = run_one(item["puzzle"], item["cases"], args.method,
+                              args.budget, args.table_dir, args.limit,
+                              verbose=False)
+                reports.append(rep)
+                distil(rep, os.path.join(args.out_dir, f"strategy_{pt}.py"),
+                       args.method)
+        else:
+            rep = run_one(bundle["puzzle"], bundle["cases"], args.method,
+                          args.budget, args.table_dir, args.limit,
+                          verbose=False)
+            reports.append(rep)
+            distil(rep, os.path.join(args.out_dir,
+                                     f"strategy_{bundle['puzzle'].name}.py"),
+                   args.method)
     print()
     print(scoring.summarize(reports))
     return 0
