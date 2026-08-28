@@ -67,6 +67,8 @@ short BFS-table solver with a clear idea per phase over a 2000-line monster.
 Skills live under `.agents/skills/` (one per capability):
 
 - `rubiks-cube` - the staged 4-phase solver, its tables, and how to extend it;
+- `polynomial-time-algorithms` - the complexity contract: every solver must
+  run in polynomial time; budgets, constructive patterns, solve-then-shorten;
 - `twisty-puzzles` - megaminx / pyraminx / big cubes: beam search, LBL roadmap;
 - `cayley-graphs` - generic group puzzles, biBFS, IDA*, heuristics;
 - `kaggle-agent-competitions` - token wiring, data formats, submissions;

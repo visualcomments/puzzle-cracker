@@ -81,24 +81,55 @@ def test_333_roundtrips():
 
 
 def test_333_short_solves():
+    """Short-scramble solves via the production biBFS path (optimal)."""
+    from puzzle_cracker import solve as _solve
     if not os.path.exists("data/santa-2023/puzzle_info.csv"):
         return
     data = load_santa_2023("data/santa-2023", puzzle_types=["cube_3/3/3"])
     pz = data["cube_3/3/3"]["puzzle"]
-    sc = cube_adapter_for(pz)
     rng = random.Random(4)
     solved = 0
-    for k in (1, 2, 3):
+    for k in (1, 2, 3, 5, 7):
         st, _ = pz.scrambled(k, rng)
-        try:
-            sol = sc.solve(st, table_dir="cache/tables")
-        except Exception:
+        sol = _solve(pz, st, method="bibfs", max_nodes=1_500_000)
+        if sol is None:
             continue
         back = st
         for m in sol:
             back = pz.apply(back, m)
         solved += back == pz.solved
-    assert solved >= 1  # at least the 1-move scramble must solve
+    assert solved >= 3  # short scrambles must solve optimally
+
+
+def test_poly_pancake():
+    from puzzle_cracker import reversals
+    from puzzle_cracker.complexity import solve_pancake_poly, poly_budget, ensure_poly
+    rng = random.Random(8)
+    for n in (6, 9, 15, 30):
+        pz = reversals(n)
+        st, _ = pz.scrambled(n * 2, rng)
+        sol = solve_pancake_poly(pz, st)
+        assert len(sol) <= 2 * n
+        back = st
+        for m in sol:
+            back = pz.apply(back, m)
+        assert back == pz.solved
+    # budget enforcement is polynomial
+    assert poly_budget(30, 10) > 0
+    ensure_poly("test", 5, poly_budget(30, 10))
+
+
+def test_poly_all_segment_reversals():
+    from puzzle_cracker import reversals
+    from puzzle_cracker.complexity import solve_pancake_poly
+    pz = reversals(10, all_segments=True)
+    st, _ = pz.scrambled(15, random.Random(9))
+    sol = solve_pancake_poly(pz, st)
+    back = st
+    for m in sol:
+        back = pz.apply(back, m)
+    assert back == pz.solved
+    assert len(sol) <= 2 * 10
 
 
 if __name__ == "__main__":

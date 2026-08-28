@@ -83,6 +83,28 @@ def demo_reversals():
               f"({time.time() - t0:.2f}s)")
 
 
+def demo_poly():
+    print()
+    print("== Pancake / reversals (constructive POLYNOMIAL solver) ==")
+    from puzzle_cracker import reversals
+    from puzzle_cracker.complexity import solve_pancake_poly, poly_budget
+    rng = random.Random(4)
+    for n in (8, 20, 50):
+        pz = reversals(n)
+        st, _ = pz.scrambled(n, rng)
+        t0 = time.time()
+        sol = solve_pancake_poly(pz, st)
+        dt = time.time() - t0
+        back = st
+        for m in sol:
+            back = pz.apply(back, m)
+        print(f"  n={n}: solved={back == pz.solved} moves={len(sol)} "
+              f"(<=2n={2 * n}) budget(poly)={poly_budget(n, n)} "
+              f"({dt * 1000:.1f}ms)")
+    print("  contract: O(n^2) time, <=2n moves - see the "
+          "polynomial-time-algorithms skill")
+
+
 if __name__ == "__main__":
     if not os.path.exists("data/santa-2023/puzzle_info.csv"):
         print("competition data missing - run:  make data   "
@@ -91,5 +113,6 @@ if __name__ == "__main__":
     demo_222()
     demo_333()
     demo_reversals()
+    demo_poly()
     print("\nSee docs/puzzles.md for the algorithm write-up "
           "and docs/competitions.md for the family.")

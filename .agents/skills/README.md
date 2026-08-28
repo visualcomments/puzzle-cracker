@@ -10,6 +10,7 @@ via `.claude/skills/` symlinks; Cursor also reads `.cursor/skills/`).
 | `twisty-puzzles` | megaminx / big cubes: colour-guided beam search + reduction roadmap |
 | `cayley-graphs` | permutation-group puzzles: biBFS, IDA*, beam, heuristics |
 | `kaggle-agent-competitions` | token wiring, data formats, submissions |
+| `polynomial-time-algorithms` | create solvers that run in polynomial time: budgets, constructive patterns, solve-then-shorten |
 | `algo-distillation` | turn a working solver into the simple elegant artifact |
 | `scoring-and-benchmarks` | metrics, held-out sets, scorecards |
 
