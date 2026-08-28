@@ -41,16 +41,19 @@ COMPETITIONS = [
 
 
 def token() -> Optional[str]:
-    for var in ("KAGGLE_KEY", "KAGGLE_TOKEN"):
+    for var in ("KAGGLE_KEY", "KAGGLE_TOKEN", "KAGGLE_API_TOKEN"):
         v = os.environ.get(var)
         if v:
             return v
-    path = os.path.expanduser("~/.kaggle/kaggle.json")
-    if os.path.exists(path):
-        try:
-            return json.load(open(path)).get("key")
-        except Exception:
-            return None
+    for path in (os.path.expanduser("~/.kaggle/kaggle.json"),
+                 os.path.expanduser("~/.kaggle/access_token")):
+        if os.path.exists(path):
+            try:
+                if path.endswith("kaggle.json"):
+                    return json.load(open(path)).get("key")
+                return open(path).read().strip()
+            except Exception:
+                return None
     return None
 
 
@@ -71,12 +74,15 @@ def _kaggle_cli() -> Optional[str]:
 
 
 def ensure_credentials() -> bool:
-    """Ensure the token is available to the kaggle CLI."""
+    """Ensure the token is available to the kaggle CLI (1.x reads KAGGLE_KEY,
+    2.x reads KAGGLE_API_TOKEN / ~/.kaggle/access_token)."""
     if token() is None:
         return False
     if _kaggle_cli() is not None:
+        tok = token() or ""
         os.environ.setdefault("KAGGLE_USERNAME", username() or "kaggle")
-        os.environ.setdefault("KAGGLE_KEY", token() or "")
+        os.environ.setdefault("KAGGLE_KEY", tok)
+        os.environ.setdefault("KAGGLE_API_TOKEN", tok)
         return True
     return False
 

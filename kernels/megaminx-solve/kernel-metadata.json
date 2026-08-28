@@ -1,7 +1,7 @@
 {
-  "id": "apollinariat/puzzle-cracker-megaminx-diffusion-cayleypy",
-  "title": "Puzzle Cracker - Megaminx diffusion (CayleyPy)",
-  "code_file": "run.py",
+  "id": "apollinariat/puzzle-cracker-megaminx-solve-cayleypy",
+  "title": "Puzzle Cracker - Megaminx solve-only (CayleyPy)",
+  "code_file": "solve_only.py",
   "language": "python",
   "kernel_type": "script",
   "is_private": true,

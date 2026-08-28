@@ -1,0 +1,15 @@
+{
+  "id": "apollinariat/puzzle-cracker-megaminx-tpu-train-cayleypy",
+  "title": "Puzzle Cracker - Megaminx TPU train (CayleyPy)",
+  "code_file": "train_tpu.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": false,
+  "enable_tpu": true,
+  "enable_internet": false,
+  "dataset_sources": [
+    "apollinariat/puzzle-cracker-megaminx-diff"
+  ],
+  "model_sources": []
+}
