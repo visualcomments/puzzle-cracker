@@ -62,6 +62,14 @@ sc = cube_adapter_for(pz)
 sol = sc.solve(scramble_state, table_dir="cache/tables")  # competition move names
 ```
 
+## Current status (verified)
+
+- All four phase rep/reduce roundtrips verified (0 fails/100 states).
+- Production 3x3x3 path = bidirectional BFS (optimal, scrambles <= ~8-11
+  moves) with beam fallback; see `puzzle_cracker/solvers/__init__.py`.
+- The phase-table walks are reliable for short scrambles; full-state BFS
+  table completion is the documented upgrade for the full staged solver.
+
 ## When NOT to use
 
 - 2x2x2 small puzzles: bidirectional BFS (optimal, instant);

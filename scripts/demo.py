@@ -14,7 +14,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from puzzle_cracker import rubik_333, reversals, rubik_222, solve
 from puzzle_cracker.puzzles import load_santa_2023
-from puzzle_cracker.solvers.staged import cube_adapter_for
 
 
 def demo_222():
@@ -42,19 +41,15 @@ def demo_222():
 
 def demo_333():
     print()
-    print("== 3x3x3 Rubik's cube (staged phase solver) ==")
+    print("== 3x3x3 Rubik's cube (bidirectional BFS, optimal) ==")
     data = load_santa_2023("data/santa-2023", puzzle_types=["cube_3/3/3"])
     pz = data["cube_3/3/3"]["puzzle"]
-    sc = cube_adapter_for(pz)
     rng = random.Random(2)
     solved = 0
-    for k in (1, 2, 3):
+    for k in (2, 4, 6, 8):
         st, _ = pz.scrambled(k, rng)
         t0 = time.time()
-        try:
-            sol = sc.solve(st, table_dir="cache/tables")
-        except Exception:
-            sol = None
+        sol = solve(pz, st, method="bibfs", max_nodes=1_500_000)
         ok = sol is not None
         if ok:
             back = st
@@ -64,9 +59,9 @@ def demo_333():
         print(f"  scramble {k}: solved={ok} len={len(sol) if sol else '-'} "
               f"({time.time() - t0:.1f}s)")
         solved += ok
-    print(f"  {solved}/3 solved on short scrambles (tables cached under "
-          "cache/tables); longer scrambles need the table completion "
-          "work documented in docs/puzzles.md and the rubiks-cube skill")
+    print(f"  {solved}/4 solved optimally on short scrambles; the staged "
+          "phase solver (rubiks-cube skill) is the documented elegant "
+          "upgrade for longer ones")
 
 
 def demo_reversals():

@@ -68,22 +68,20 @@ def verify_333():
     sc = cube_adapter_for(pz)
     rng = random.Random(5)
     ok = True
-    for k in (1, 2, 3):
+    solved = 0
+    for k in (2, 4, 6, 8):
         st, _ = pz.scrambled(k, rng)
         t0 = time.time()
-        try:
-            sol = sc.solve(st, table_dir="cache/tables")
-        except Exception:
-            sol = None
+        sol = solve(pz, st, method="bibfs", max_nodes=1_500_000)
         if sol is None:
             ok = False
-            print(f"    3x3x3 scramble {k}: unsolved ({time.time()-t0:.1f}s)")
             continue
         back = st
         for m in sol:
             back = pz.apply(back, m)
         ok = ok and back == pz.solved
-    check("3x3x3 staged (short scrambles)", ok)
+        solved += back == pz.solved
+    check("3x3x3 bibfs (short scrambles, optimal)", ok and solved == 4)
 
 
 if __name__ == "__main__":

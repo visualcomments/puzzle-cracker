@@ -253,6 +253,24 @@ class StagedCube:
                     break
             self.edge_owners.append(owner)
 
+        # token masks for fast encode: each distinct token gets a bit
+        self._tok_bits = {}
+        for i, t in enumerate(self.solved_state):
+            self._tok_bits.setdefault(t, 1 << (len(self._tok_bits) % 60))
+        def slot_mask(triple):
+            m = 0
+            for x in triple:
+                m |= self._tok_bits[self.solved_state[x]]
+            return m
+        self._corner_mask2owner = {}
+        for oi, _ in enumerate(CORNER_ORDER):
+            self._corner_mask2owner[slot_mask(self.corner_slot(CORNER_ORDER[oi]))] = oi
+        self._edge_mask2owner = {}
+        for oi, _ in enumerate(EDGE_ORDER):
+            a, b = self.EDGE_SLOTS[EDGE_ORDER[oi]]
+            self._edge_mask2owner[self._tok_bits[self.solved_state[a]] |
+                                  self._tok_bits[self.solved_state[b]]] = oi
+
         # cubie-level moves computed by simulation: for each move, apply it
         # to the *solved* state and read the piece dynamics straight out of
         # encode().  This sidesteps all permutation conventions.
@@ -316,34 +334,26 @@ class StagedCube:
         return self._rotate_ud_first(self.CORNER_SLOTS[cname], self.face_of)
 
     def encode(self, state: State):
+        tb = self._tok_bits
         corners = []
-        for slot, cname in enumerate(CORNER_ORDER):
+        for cname in CORNER_ORDER:
             a, b, c = self.corner_slot(cname)
-            tokens = (state[a], state[b], state[c])
-            owner = -1
-            for oi, _ in enumerate(CORNER_ORDER):
-                x, y, z = self.corner_slot(CORNER_ORDER[oi])
-                if set(tokens) == set((self.solved_state[x], self.solved_state[y], self.solved_state[z])):
-                    owner = oi
-                    break
-            # orientation: index of the owner's U/D-colored sticker within
-            # the triple (home U/D facelet is slot index 0 by construction)
+            m = tb[state[a]] | tb[state[b]] | tb[state[c]]
+            owner = self._corner_mask2owner[m]
             hx, hy, hz = self.corner_slot(CORNER_ORDER[owner])
-            ud_color = self.solved_state[hx]  # U/D facelet of the owner
-            orient = next(k for k, t in enumerate(tokens) if t == ud_color)
+            ud_color = self.solved_state[hx]
+            if state[a] == ud_color:
+                orient = 0
+            elif state[b] == ud_color:
+                orient = 1
+            else:
+                orient = 2
             corners.append((owner, orient))
         edges = []
-        for slot, ename in enumerate(EDGE_ORDER):
+        for ename in EDGE_ORDER:
             a, b = self.EDGE_SLOTS[ename]
-            tokens = (state[a], state[b])
-            owner = -1
-            for oi, _ in enumerate(EDGE_ORDER):
-                x, y = self.EDGE_SLOTS[EDGE_ORDER[oi]]
-                if set(tokens) == set((self.solved_state[x], self.solved_state[y])):
-                    owner = oi
-                    break
-            # orientation: 0 iff the owner's U/D (or, for E-slice edges,
-            # F/B) coloured sticker sits on a same-type face as its home.
+            m = tb[state[a]] | tb[state[b]]
+            owner = self._edge_mask2owner[m]
             hx, hy = self.EDGE_SLOTS[EDGE_ORDER[owner]]
             home_faces = (self.face_of[hx], self.face_of[hy])
             if any(f in ("U", "D") for f in home_faces):
@@ -352,8 +362,10 @@ class StagedCube:
             else:
                 anchor = self.solved_state[hx if self.face_of[hx] in ("F", "B") else hy]
                 ok_face = ("F", "B")
-            j = 0 if tokens[0] == anchor else 1
-            orient = 0 if self.face_of[(a, b)[j]] in ok_face else 1
+            if state[a] == anchor:
+                orient = 0 if self.face_of[a] in ok_face else 1
+            else:
+                orient = 0 if self.face_of[b] in ok_face else 1
             edges.append((owner, orient))
         return tuple(corners), tuple(edges)
 
@@ -515,7 +527,7 @@ class StagedCube:
         cur = state
         for t in (t1, t2, t3, t4):
             red = t.reduce(cur)
-            path = t.solve_red(red, self, max_states=budgets[t.name])
+            path = t.solve_red_fixed(red, self, max_states=budgets[t.name])
             if path is None:
                 raise RuntimeError(f"phase {t.name} could not reach root "
                                    f"(budget {budgets[t.name]})")
@@ -554,7 +566,7 @@ class StagedCube:
             perm_key = 0
             for owner, _ in cm:
                 perm_key = (perm_key << 3) | owner
-            repair = p3_table.walk(perm_key, self)
+            repair = p3_table.fix(perm_key, self)
             if repair is None:
                 raise RuntimeError(f"p3 cannot fix corner perm of {m}")
             seq = (list(m) if isinstance(m, list) else [m]) + list(repair)
@@ -591,6 +603,10 @@ class StagedCube:
         return [ft["U"], inv(ft["U"]), ft["D"], inv(ft["D"]),
                 [ft["L"], ft["L"]], [ft["R"], ft["R"]],
                 [ft["F"], ft["F"]], [ft["B"], ft["B"]]]
+
+
+def _inv_str(m: str) -> str:
+    return ("-" + m) if not m.startswith("-") else m[1:]
 
 
 class _PhaseTable:
@@ -647,6 +663,28 @@ class _PhaseTable:
         print(f"[staged] {self.name}: {len(parent)} coords, "
               f"{time.time() - t0:.1f}s")
 
+    @staticmethod
+    def inv_move(m):
+        if isinstance(m, str):
+            return ("-" + m) if not m.startswith("-") else m[1:]
+        return [w for w in map(_inv_str, reversed(m))]
+
+    def fix(self, red: int, cube: StagedCube) -> List[str]:
+        """Moves mapping the CURRENT coordinate down to the root.
+
+        walk(red) returns the root->red path; fixing a real state at ``red``
+        needs the inverse of each step, in the same order."""
+        raw = self.walk(red, cube)
+        if raw is None:
+            return None
+        out = []
+        for m in raw:
+            if isinstance(m, str):
+                out.append(_inv_str(m))
+            else:
+                out.extend(_inv_str(x) for x in reversed(m))
+        return out
+
     def walk(self, red: int, cube: StagedCube) -> List[str]:
         """Moves taking the current reduced coordinate down to the root."""
         if self.parent is None:
@@ -669,10 +707,11 @@ class _PhaseTable:
                 break
         return seq
 
-    def solve_red(self, red: int, cube: StagedCube, max_states: int = 2_000_000) -> List[str]:
-        """Robust phase solve: walk the table when the coordinate is known,
-        otherwise run a bounded BFS from this coordinate to the root."""
-        path = self.walk(red, cube) if self.parent is not None else None
+    def solve_red_fixed(self, red: int, cube: StagedCube, max_states: int = 2_000_000) -> List[str]:
+        """Robust phase solve (fix semantics): use the table when the
+        coordinate is known, otherwise run a bounded BFS from this
+        coordinate to the root."""
+        path = self.fix(red, cube) if self.parent is not None else None
         if path is not None:
             return path
         root = self.reduce(cube.puzzle.solved)
@@ -704,7 +743,7 @@ class _PhaseTable:
         while found != red:
             pr, mi = parent[found]
             m = self.moves[mi]
-            seq.extend(m if isinstance(m, list) else [m])
+            seq.append(m)
             found = pr
             if len(seq) > 800:
                 break

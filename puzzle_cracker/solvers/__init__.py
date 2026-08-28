@@ -28,21 +28,17 @@ def solve(puzzle: Puzzle, state: State, *,
           max_nodes: int = 2_000_000, table_dir: Optional[str] = None) -> Optional[List[str]]:
     """Solve ``state`` -> ``puzzle.solved`` with an automatic method pick.
 
-    Order: staged (3x3x3-class), bidirectional BFS (small groups, budgeted),
-    IDA* (heuristic), beam (huge graphs).  No group-size precomputation: a
-    full-group BFS would blow memory on 2x2x2-sized spaces.
-    """
-    # 3x3x3-class -> staged solver
-    if puzzle.n == 54:
-        ft = _face_turns_cache(puzzle)
-        if ft is not None:
-            face_turns, face_of = ft
-            sc = StagedCube(puzzle, face_turns, face_of=face_of)
-            try:
-                return sc.solve(state, table_dir=table_dir)
-            except Exception:
-                pass
+    Order: bidirectional BFS (small/budgeted - exact), IDA* (heuristic),
+    beam (huge graphs).  No group-size precomputation: a full-group BFS
+    would blow memory on 2x2x2-sized spaces.
 
+    NOTE on the staged 3x3x3 solver: its phase BFS tables are built over
+    reduced coordinates (roundtrips verified), but the orientation phases
+    are not quotient-closed, so the table walks need a full-state BFS
+    redesign (documented in docs/puzzles.md - work in progress).  Use
+    `solve_staged()` for research runs; the production 333 path here is
+    biBFS (short scrambles, optimal) then beam.
+    """
     # bidirectional BFS first (budgeted)
     if method in (None, "bibfs"):
         res = generic.solve_bibfs_adaptive(puzzle, state, max_states=max_nodes)

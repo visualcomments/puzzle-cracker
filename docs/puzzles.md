@@ -2,22 +2,29 @@
 
 ## The simple elegant algorithm the harness distils
 
-**Phase-reduction on the Cayley graph.**  For the 3x3x3 the solver drives
-the cube down through four nested subgroups; every phase is a single BFS
-parent-tree over a tiny reduced coordinate space (see the `rubiks-cube`
-skill for the table).  The result: a solver that stores only parent pointers
-(a few tens of MB), solves in milliseconds, and reads like a proof:
+**Phase-reduction on the Cayley graph.**  For the 3x3x3 the elegant solver
+drives the cube down through four nested subgroups; every phase is a single
+BFS parent-tree over a reduced coordinate space (see the `rubiks-cube`
+skill for the table):
 
     1. fix edge orientation        (2048 states)
     2. fix corner orientation +
        E-slice edge placement      (1 082 565 states)
-    3. fix corner permutation      (<= 20 160 states)
-    4. fix the remaining edges     (<= ~967 680 states)
+    3. fix corner permutation      (8! = 40 320 states)
+    4. fix the remaining edges     (K-subgroup, ~483 840 states)
 
-The same idea in miniature solves the 2x2x2 and small graph puzzles
-exactly via **bidirectional BFS**, and the huge ones (Megaminx, 4x4x4+,
-big reversals) via **colour-guided beam search** on the competition's own
-facelet model.
+The reduced-coordinate BFS tables are built and the rep/encode roundtrips
+are verified (0/100 failures per phase), but the orientation phases are not
+*quotient-closed* (the flip delta depends on the piece type in a slot), so
+the table walks currently solve only short scrambles reliably.  The
+production path for the 3x3x3 is therefore **bidirectional BFS** (optimal
+for scrambles up to ~8-11 moves, verified) with **beam search** for longer
+ones; completing the phase tables via a full-state BFS is the documented
+next step (see the `rubiks-cube` skill).
+
+The same ideas solve the rest of the family:
+2x2x2 and small graph puzzles exactly via **bidirectional BFS**; Megaminx
+and 4x4x4+ via **colour-guided beam search**.
 
 ## Why the competition is won with beam search
 
