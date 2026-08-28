@@ -14,6 +14,7 @@ via `.claude/skills/` symlinks; Cursor also reads `.cursor/skills/`).
 | `algo-distillation` | turn a working solver into the simple elegant artifact |
 | `scoring-and-benchmarks` | metrics, held-out sets, scorecards |
 | `self-improvement` | continuous improvement loop: analyze -> change -> regress -> publish |
+| `agent-orchestration` | multi-agent pantheon, council (parallel strategy races), compound capture loop |
 
 Each skill is a set of instructions under one `SKILL.md`.  Re-read the
 `SKILL.md` before relying on it; treat third-party skills as untrusted until

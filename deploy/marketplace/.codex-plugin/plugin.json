@@ -1,0 +1,8 @@
+{
+  "name": "puzzle-cracker",
+  "version": "0.1.1",
+  "description": "Twisty-puzzle Kaggle competition harness: solvers, scoring, self-improvement loop, agent orchestration.",
+  "author": "visualcomments",
+  "repository": "https://github.com/visualcomments/puzzle-cracker",
+  "license": "MIT"
+}

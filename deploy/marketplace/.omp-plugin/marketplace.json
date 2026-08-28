@@ -1,0 +1,7 @@
+{
+  "name": "puzzle-cracker",
+  "version": "0.1.1",
+  "description": "Puzzle Cracker marketplace entry (Boring Dystopia-compatible)",
+  "homepage": "https://github.com/visualcomments/puzzle-cracker",
+  "plugins": ["puzzle-cracker"]
+}

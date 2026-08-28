@@ -157,6 +157,33 @@ def test_publish_no_token_graceful():
     assert "token" in res.get("reason", "") or "no GITHUB" in res.get("reason", "")
 
 
+def test_agent_roles_and_capture():
+    from puzzle_cracker import agents
+    # every role card renders
+    for role in agents.ROLES:
+        assert "## @" in agents.role_card(role)
+    # capture loop writes where the next round reads
+    path = agents.capture("council lesson: race strategies in parallel "
+                          "and keep the best", context="test")
+    assert "council lesson" in agents.lessons()
+
+
+def test_council_parallel():
+    from puzzle_cracker import agents, competitions as C
+    bundles = C.load_all("data", verbose=False)
+    if not bundles:
+        return
+    reports = agents.council(
+        bundles,
+        {"beam1": dict(method="beam", budget_s=2.0),
+         "beam2": dict(method="beam", budget_s=2.0)},
+        limit=2, workers=2)
+    assert len(reports) > 0
+    # best-first ordering by score
+    scores = [r.score for r in reports]
+    assert scores == sorted(scores, reverse=True)
+
+
 if __name__ == "__main__":
     import traceback
 

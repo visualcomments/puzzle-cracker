@@ -1,0 +1,9 @@
+{
+  "name": "puzzle-cracker",
+  "version": "0.1.1",
+  "description": "Twisty-puzzle Kaggle competition harness: solvers (Rubik's cube family, Megaminx, CayleyPy graphs), scoring, self-improvement loop, agent orchestration.",
+  "author": { "name": "visualcomments" },
+  "repository": "https://github.com/visualcomments/puzzle-cracker",
+  "license": "MIT",
+  "keywords": ["kaggle", "puzzle", "cayley-graphs", "rubiks-cube", "megaminx", "beam-search", "self-improvement"]
+}

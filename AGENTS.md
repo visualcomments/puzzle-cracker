@@ -79,7 +79,9 @@ Skills live under `.agents/skills/` (one per capability):
 - `algo-distillation` - turning a working solver into the elegant artifact;
 - `scoring-and-benchmarks` - scorecards, held-out sets, reproducible runs;
 - `self-improvement` - the continuous improvement loop (analyze -> change
-  -> regress -> publish).
+  -> regress -> publish);
+- `agent-orchestration` - multi-agent architecture: role pantheon, council
+  (parallel strategy races), background dispatch, compound capture loop.
 
 Read the relevant `SKILL.md` before relying on it.  Treat any third-party
 skill or plugin as untrusted until reviewed (see `vetting-agent-extensions`

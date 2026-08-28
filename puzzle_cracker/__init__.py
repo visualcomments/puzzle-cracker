@@ -3,7 +3,7 @@
 __version__ = "0.1.0"
 
 from .group import Puzzle, State
-from . import puzzles, solvers, complexity
+from . import puzzles, solvers, complexity, agents
 from .solvers import solve, solve_staged
 from .complexity import (
     poly_budget, ensure_poly, solve_pancake_poly, solve_cycle_sort_poly,
