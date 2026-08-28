@@ -120,14 +120,14 @@ def solve_beam(puzzle: Puzzle, state: State, heuristic: Heuristic, *,
     graphs: megaminx, 4x4x4+, reversals n>=12...)."""
     if state == puzzle.solved:
         return []
-    beam = [(heuristic(state), [])]
+    beam = [(heuristic(state), state, [])]
     seen = {state}
     t0 = time.time()
     for step in range(max_steps):
         if time.time() - t0 > time_budget_s:
             return None
         candidates: List[tuple] = []
-        for cur, path in beam:
+        for _, cur, path in beam:
             for m in puzzle.move_names:
                 ns = puzzle.apply(cur, m)
                 if ns in seen:
@@ -138,7 +138,7 @@ def solve_beam(puzzle: Puzzle, state: State, heuristic: Heuristic, *,
                 nh = heuristic(ns)
                 if ns == puzzle.solved:
                     return path + [m]
-                candidates.append((nh, path + [m]))
+                candidates.append((nh, ns, path + [m]))
         if not candidates:
             return None
         candidates.sort(key=lambda t: t[0])

@@ -92,7 +92,7 @@ def evaluate(puzzle: Puzzle, cases: Sequence[dict],
     report = RunReport(puzzle.name)
     t0 = time.time()
     for i, case in enumerate(cases):
-        st = State(case["initial_state"])
+        st = tuple(case["initial_state"])
         c0 = time.time()
         try:
             moves = solver(st)
