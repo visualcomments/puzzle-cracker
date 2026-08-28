@@ -73,7 +73,7 @@ fi
 
 # DeepSeek Harness plugin (bundled in this repo)
 if command -v dsh >/dev/null 2>&1; then
-  dsh plugin add "file:$PZ_ROOT/deploy/dsh-plugin" 2>/dev/null \
+  dsh plugin --profile web add "file:$PZ_ROOT/deploy/dsh-plugin" 2>/dev/null \
     && echo "  registered deepseek-harness plugin" \
     || echo "  !! dsh plugin add failed (install pnpm, re-run)"
 else

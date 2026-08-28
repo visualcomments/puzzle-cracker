@@ -1,0 +1,15 @@
+{
+  "id": "visualcomments/puzzle-cracker-megaminx-beam-cayleypy",
+  "title": "Puzzle Cracker - Megaminx beam (CayleyPy)",
+  "code_file": "megaminx_beam.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": false,
+  "dataset_sources": [
+    "visualcomments/puzzle-cracker-cayleypy-megaminx"
+  ],
+  "model_sources": [],
+  "competition_variables": []
+}
