@@ -10,6 +10,7 @@ solve-only kernel (PZ_TRAIN=0).
 Env: PZ_WALL_CAP (seconds, default 6h), PZ_EPOCHS, PZ_KMAX, PZ_BATCH.
 """
 import os, sys, glob, json, shutil, subprocess, time, torch
+import torch.nn.functional as F
 
 INPUT = "/kaggle/input"
 WORK = "/kaggle/working"
@@ -69,13 +70,18 @@ def main():
     move_names = data["move_names"]
     all_moves = torch.tensor(data["moves"], dtype=torch.int64, device=device)
     V0 = torch.load(f"targets/p{GROUP_ID:03d}-t{TARGET_ID:03d}.pt",
-                    weights_only=True, map_location=device)
+                    weights_only=True, map_location="cpu").to(device)
     num_classes = int(torch.unique(V0).numel())
     state_size = all_moves.size(1)
     n_gens = all_moves.size(0)
     name2idx = {n: i for i, n in enumerate(move_names)}
     inv = torch.tensor([name2idx[n[1:] if n.startswith("-") else "-" + n]
                         for n in move_names], device=device)
+
+    # CPU copies for walk generation (XLA graph too large when unrolled)
+    all_moves_cpu = all_moves.cpu()
+    V0_cpu = V0.cpu()
+    inv_cpu = inv.cpu()
 
     print(f"TPU={TPU} generators={n_gens} state={state_size} classes={num_classes} "
           f"Kmax={KMAX} wall={WALL_CAP:.0f}s", flush=True)
@@ -90,21 +96,24 @@ def main():
     os.makedirs("weights", exist_ok=True)
     os.makedirs("logs", exist_ok=True)
 
-    def gen_walks(k, K_min, K_max):
+    def gen_walks_cpu(k, K_min, K_max):
+        """Random walks on the host CPU (multinomial works there; the full
+        unrolled graph exceeds TPU HBM).  Returns CPU tensors."""
         total = k * (K_max - K_min + 1)
-        Y = torch.arange(K_min, K_max + 1, device=device).repeat_interleave(k)
-        states = V0.repeat(total, 1)
-        last_moves = torch.full((total,), -1, dtype=torch.int64, device=device)
+        Y = torch.arange(K_min, K_max + 1).repeat_interleave(k)
+        states = V0_cpu.repeat(total, 1)
+        last_moves = torch.full((total,), -1, dtype=torch.int64)
         for t in range(K_max):
             cutoff = 0 if t < K_min else k * (t - K_min + 1)
             if cutoff >= total:
                 break
-            pm_ = torch.ones((total - cutoff, n_gens), dtype=torch.bool, device=device)
-            pm_[torch.arange(total - cutoff, device=device), inv[last_moves[cutoff:]]] = False
+            n_act = total - cutoff
+            pm_ = torch.ones((n_act, n_gens), dtype=torch.bool)
+            pm_[torch.arange(n_act), inv_cpu[last_moves[cutoff:]]] = False
             nxt = torch.multinomial(pm_.float(), 1).squeeze(-1)
-            states[cutoff:] = torch.gather(states[cutoff:], 1, all_moves[nxt])
+            states[cutoff:] = torch.gather(states[cutoff:], 1, all_moves_cpu[nxt])
             last_moves[cutoff:] = nxt
-        perm = torch.randperm(total, device=device)
+        perm = torch.randperm(total)
         return states[perm], Y[perm]
 
     walkers = 1_000_000 // KMAX
@@ -112,13 +121,8 @@ def main():
     epoch = 0
     loss = torch.tensor(0.0, device=device)
     for epoch in range(1, EPOCHS + 1):
-        try:
-            X, Y = gen_walks(walkers, 1, KMAX)
-        except Exception as exc:
-            print("tpu walk gen failed -> cpu fallback:", str(exc)[:150], flush=True)
-            device_cpu = torch.device("cpu")
-            X, Y = gen_walks(walkers, 1, KMAX)
-            X, Y = X.to(device), Y.to(device)
+        X, Y = gen_walks_cpu(walkers, 1, KMAX)
+        X, Y = X.to(device), Y.to(device)
         model.train()
         for i in range(0, X.size(0), BATCH):
             xb, yb = X[i:i + BATCH], Y[i:i + BATCH].float()

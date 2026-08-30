@@ -1,7 +1,7 @@
 {
-  "id": "apollinariat/puzzle-cracker-megaminx-solve-only-cayleypy",
-  "title": "Puzzle Cracker - Megaminx solve-only (CayleyPy)",
-  "code_file": "solve_only.py",
+  "id": "apollinariat/puzzle-cracker-megaminx-long-train-cayleypy",
+  "title": "Puzzle Cracker - Megaminx long train (CayleyPy)",
+  "code_file": "train_only.py",
   "language": "python",
   "kernel_type": "script",
   "is_private": true,

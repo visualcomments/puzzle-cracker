@@ -1,14 +1,21 @@
 #!/usr/bin/env python3
-"""Megaminx solve-only kernel (Kaggle GPU) - uses the best trained weights
-present in the dataset (no training in this kernel).  For round 2: consumes
-weights produced by the TPU trainer kernel.
+"""Megaminx LONG training kernel (Kaggle GPU T4) - trains the Pilgrim
+distance predictor for ~9h (K_max=80 for better labels; walkers kept at
+1e6 states/epoch) and saves weights + model-info json to /kaggle/working.
 
-Env: PZ_B_LIST, PZ_STEPS, PZ_CASE_BUDGET, PZ_WALL, PZ_LIMIT.
+Round 2: a much better model than the 301-epoch round-1 run.  Weights are
+then merged into the dataset and consumed by the solve-only kernel.
+
+Env: PZ_WALL_CAP (default 32400s = 9h), PZ_EPOCHS, PZ_KMAX, PZ_BATCH.
 """
 import os, sys, glob, json, shutil, subprocess
 
 INPUT = "/kaggle/input"
 WORK = "/kaggle/working"
+WALL_CAP = os.environ.get("PZ_WALL_CAP", "32400")
+KMAX = os.environ.get("PZ_KMAX", "80")
+EPOCHS = os.environ.get("PZ_EPOCHS", "8192")
+BATCH = os.environ.get("PZ_BATCH", "20000")
 
 
 def find_dataset():
@@ -35,13 +42,13 @@ def main():
             shutil.copy(s, d)
     print("work contents:", sorted(os.listdir(WORK)), flush=True)
     env = dict(os.environ)
-    env["PZ_DATA"] = ds
-    env["PZ_OUT"] = "/kaggle/working/submission.csv"
-    env["PZ_CASE_BUDGET"] = os.environ.get("PZ_CASE_BUDGET", "28")
-    env["PZ_WALL"] = os.environ.get("PZ_WALL", str(9 * 3600))
-    subprocess.run([sys.executable, os.path.join(WORK, "solve_megaminx.py")],
+    env["PZ_WALL_CAP"] = WALL_CAP
+    env["PZ_KMAX"] = KMAX
+    env["PZ_EPOCHS"] = EPOCHS
+    env["PZ_BATCH"] = BATCH
+    subprocess.run([sys.executable, os.path.join(WORK, "train_megaminx.py")],
                    check=True, env=env)
-    print("=== DONE ===", flush=True)
+    print("=== TRAIN DONE ===", flush=True)
 
 
 if __name__ == "__main__":

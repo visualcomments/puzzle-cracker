@@ -15,12 +15,14 @@ param(
 $Root = $PSScriptRoot
 $Py = Join-Path $Root ".venv\Scripts\python.exe"
 $Kag = Join-Path $Root ".venv\Scripts\kaggle.exe"
-$ComputeTok = "KGAT_7dfb30df891fb9bdb144544123e0602d"   # GPU/TPU compute
-$DataTok = "KGAT_937f8d720c60ed30a86df87c2b358964"      # data + submission
+$ComputeTok = "KGAT_7dfb30df891fb9bdb144544123e0602d"   # single account: data + compute + submission
+$DataTok = $ComputeTok
 $K = @{
     diffusion = "apollinariat/puzzle-cracker-megaminx-diffusion-cayleypy"
     beam      = "apollinariat/puzzle-cracker-megaminx-beam-cayleypy"
     tpu       = "apollinariat/puzzle-cracker-megaminx-tpu-train-cayleypy"
+    trainlong = "apollinariat/puzzle-cracker-megaminx-long-train-cayleypy"
+    solve     = "apollinariat/puzzle-cracker-megaminx-solve-cayleypy"
 }
 $env:KAGGLE_API_TOKEN = $ComputeTok
 
